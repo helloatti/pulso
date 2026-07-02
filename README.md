@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulso
 
-## Getting Started
+Vista en tiempo real del estado de la búsqueda: zonas críticas, velocidad de resolución y personas sin encontrar.
 
-First, run the development server:
+Contribución al proyecto [Localizalo](https://github.com/jorgerojas26/localizalo) — plataforma humanitaria de consolidación de personas desaparecidas tras el terremoto de Venezuela 2026.
 
+## Qué hace
+
+- Total de personas registradas en el sistema
+- % encontradas vs sin encontrar
+- Tabla de zonas ordenadas por déficit (personas sin resolver)
+- Velocidad de resolución promedio en días
+
+## Stack
+
+- Next.js 16 + React 19
+- Supabase (Postgres, schema `localize`)
+- Tailwind CSS v4
+- TypeScript
+
+## Cómo correrlo localmente
+
+1. Cloná el repo:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/helloatti/pulso.git
+cd pulso
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Instalá dependencias:
+```bash
+pnpm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Creá el archivo `.env.local` con las credenciales de Supabase:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+NEXT_PUBLIC_SUPABASE_URL=tu_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_key
 
-## Learn More
+4. Corré el servidor:
+```bash
+pnpm dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Abrí `http://localhost:3000/dashboard`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Autor
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+[@helloatti](https://github.com/helloatti)
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
