@@ -1,17 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-
-type Ingreso = {
-  id: string
-  nombre: string
-  ubicacion: string | null
-  procedencia: string | null
-  edad: number | null
-  cedula: string | null
-  fuente: string | null
-  ficha_url: string | null
-}
+import type { Ingreso } from './types'
 
 type Props = {
   ubicacion: string

@@ -1,4 +1,5 @@
 import { AccordionUbicacion } from './AccordionUbicacion'
+import type { Ingreso } from './types'
 
 export const revalidate = 43200
 
@@ -21,14 +22,6 @@ type Sitio = {
   estado_operativo: string
   necesidades: string[]
   frescura: string
-}
-
-type Ingreso = {
-  id: string
-  nombre: string
-  ubicacion: string | null
-  procedencia: string | null
-  edad: number | null
 }
 
 async function fetchAllPages<T>(endpoint: string, key: string, pageSize = 100): Promise<{ items: T[]; total: number }> {
