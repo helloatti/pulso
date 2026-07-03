@@ -1,6 +1,4 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+export const revalidate = 43200 // 12 horas
 
 const API_BASE = 'https://venezuelareporta.org/api/v1'
 
@@ -20,7 +18,6 @@ type Sitio = {
   nombre: string
   estado_operativo: string
   necesidades: string[]
-  personas_estimadas: number | null
   frescura: string
 }
 
@@ -28,43 +25,22 @@ type Ingreso = {
   id: string
   nombre: string
   ubicacion: string | null
-  procedencia: string | null
 }
 
-type Stats = {
-  totalPersonas: number
-  resueltos: number
-  sinResolver: number
-  menores: number
-  verificados: number
-  pctResueltos: number
-  zonas: { zone: string; total: number; resueltos: number; faltantes: number; pct: number }[]
-  totalSitios: number
-  sitiosAbiertos: number
-  sitiosCerrados: number
-  necesidades: { nombre: string; count: number }[]
-  sitiosList: Sitio[]
-  totalIngresos: number
-  ingresosPorUbicacion: { ubicacion: string; count: number }[]
-}
+async function fetchAllPages<T>(endpoint: string, key: string, pageSize = 100): Promise<{ items: T[]; total: number }> {
+  const first = await fetch(`${API_BASE}/${endpoint}?limit=${pageSize}&offset=0`, {
+    next: { revalidate: 43200 },
+  }).then((r) => r.json())
 
-async function fetchAllPages<T>(
-  endpoint: string,
-  key: string,
-  pageSize = 100
-): Promise<{ items: T[]; total: number }> {
-  const first = await fetch(`${API_BASE}/${endpoint}?limit=${pageSize}&offset=0`).then(
-    (r) => r.json()
-  )
-  const total = first.total ?? first[key]?.length ?? 0
+  const total = first.total ?? 0
   if (!total) return { items: first[key] ?? [], total: 0 }
 
   const pages = Math.ceil(total / pageSize)
   const rest = await Promise.all(
     Array.from({ length: pages - 1 }, (_, i) =>
-      fetch(`${API_BASE}/${endpoint}?limit=${pageSize}&offset=${(i + 1) * pageSize}`).then((r) =>
-        r.json()
-      )
+      fetch(`${API_BASE}/${endpoint}?limit=${pageSize}&offset=${(i + 1) * pageSize}`, {
+        next: { revalidate: 43200 },
+      }).then((r) => r.json())
     )
   )
   return {
@@ -115,25 +91,13 @@ function calcIngresosPorUbicacion(ingresos: Ingreso[]) {
     .sort((a, b) => b.count - a.count)
 }
 
-function KPICard({
-  label,
-  value,
-  sub,
-  color = 'text-ink',
-}: {
-  label: string
-  value: string
-  sub?: string
-  color?: string
+function KPICard({ label, value, sub, color = 'text-ink' }: {
+  label: string; value: string; sub?: string; color?: string
 }) {
   return (
     <div className="bg-surface-card border border-hairline-strong rounded-xl p-6">
-      <p className="text-[11px] font-semibold tracking-[0.88px] uppercase text-muted mb-2">
-        {label}
-      </p>
-      <p className={`text-[36px] font-semibold leading-none tracking-[-1.08px] ${color}`}>
-        {value}
-      </p>
+      <p className="text-[11px] font-semibold tracking-[0.88px] uppercase text-muted mb-2">{label}</p>
+      <p className={`text-[36px] font-semibold leading-none tracking-[-1.08px] ${color}`}>{value}</p>
       {sub && <p className="text-xs text-body mt-1">{sub}</p>}
     </div>
   )
@@ -148,74 +112,34 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   )
 }
 
-export default function PulsoDashboard() {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [progress, setProgress] = useState('Cargando datos...')
+export default async function PulsoDashboard() {
+  const generado_at = new Date().toISOString()
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setProgress('Cargando personas...')
-        const { items: personas, total: totalPersonas } = await fetchAllPages<Persona>(
-          'personas',
-          'personas',
-          100
-        )
+  const [
+    { items: personas, total: totalPersonas },
+    { items: sitios, total: totalSitios },
+    { items: ingresos, total: totalIngresos },
+  ] = await Promise.all([
+    fetchAllPages<Persona>('personas', 'personas'),
+    fetchAllPages<Sitio>('sitios', 'sitios'),
+    fetchAllPages<Ingreso>('ingresos', 'personas'),
+  ])
 
-        setProgress('Cargando sitios...')
-        const { items: sitios, total: totalSitios } = await fetchAllPages<Sitio>(
-          'sitios',
-          'sitios',
-          100
-        )
-
-        setProgress('Cargando ingresos...')
-        const { items: ingresos, total: totalIngresos } = await fetchAllPages<Ingreso>(
-          'ingresos',
-          'personas',
-          100
-        )
-
-        const resueltos = personas.filter(
-          (p) => p.status === 'encontrado' || p.status === 'a_salvo'
-        ).length
-        const sinResolver = totalPersonas - resueltos
-        const menores = personas.filter((p) => p.menor).length
-        const verificados = personas.filter((p) => p.verificado).length
-        const pctResueltos = totalPersonas > 0 ? Math.round((resueltos / totalPersonas) * 100) : 0
-
-        const sitiosAbiertos = sitios.filter((s) => s.estado_operativo === 'abierto').length
-        const sitiosCerrados = sitios.filter((s) => s.estado_operativo === 'cerrado').length
-
-        setStats({
-          totalPersonas,
-          resueltos,
-          sinResolver,
-          menores,
-          verificados,
-          pctResueltos,
-          zonas: calcZonas(personas),
-          totalSitios,
-          sitiosAbiertos,
-          sitiosCerrados,
-          necesidades: calcNecesidades(sitios),
-          sitiosList: sitios.slice(0, 15),
-          totalIngresos,
-          ingresosPorUbicacion: calcIngresosPorUbicacion(ingresos).slice(0, 15),
-        })
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+  const resueltos = personas.filter((p) => p.status === 'encontrado' || p.status === 'a_salvo').length
+  const sinResolver = totalPersonas - resueltos
+  const menores = personas.filter((p) => p.menor).length
+  const verificados = personas.filter((p) => p.verificado).length
+  const pctResueltos = totalPersonas > 0 ? Math.round((resueltos / totalPersonas) * 100) : 0
+  const sitiosAbiertos = sitios.filter((s) => s.estado_operativo === 'abierto').length
+  const sitiosCerrados = sitios.filter((s) => s.estado_operativo === 'cerrado').length
+  const zonas = calcZonas(personas)
+  const necesidades = calcNecesidades(sitios)
+  const ingresosPorUbicacion = calcIngresosPorUbicacion(ingresos).slice(0, 15)
 
   return (
     <main className="min-h-screen bg-canvas px-6 py-12 font-sans">
       <div className="max-w-5xl mx-auto">
+
         {/* Header */}
         <div className="mb-10">
           <span className="text-[11px] font-semibold tracking-[0.88px] uppercase text-muted">
@@ -229,139 +153,112 @@ export default function PulsoDashboard() {
           </p>
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-4">
-            <div className="w-8 h-8 border-2 border-ink border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-body">{progress}</p>
+        {/* ── PERSONAS ── */}
+        <SectionHeader
+          title="Personas"
+          sub={`${totalPersonas.toLocaleString('es')} registradas en el sistema`}
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <KPICard label="Total" value={totalPersonas.toLocaleString('es')} />
+          <KPICard label="Resueltos" value={`${pctResueltos}%`} sub={`${resueltos.toLocaleString('es')} personas`} color="text-success" />
+          <KPICard label="Sin resolver" value={sinResolver.toLocaleString('es')} color="text-error" />
+          <KPICard label="Menores" value={menores.toLocaleString('es')} sub={`${verificados.toLocaleString('es')} verificados`} />
+        </div>
+
+        <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden mb-4">
+          <div className="px-6 py-4 border-b border-hairline">
+            <h3 className="text-[18px] font-semibold text-ink">Zonas con mayor déficit</h3>
+            <p className="text-sm text-body mt-0.5">Ordenadas por personas sin resolver</p>
           </div>
-        ) : stats ? (
-          <>
-            {/* ── PERSONAS ── */}
-            <SectionHeader
-              title="Personas"
-              sub={`${stats.totalPersonas.toLocaleString('es')} registradas en el sistema`}
-            />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-              <KPICard label="Total" value={stats.totalPersonas.toLocaleString('es')} />
-              <KPICard
-                label="Resueltos"
-                value={`${stats.pctResueltos}%`}
-                sub={`${stats.resueltos.toLocaleString('es')} personas`}
-                color="text-success"
-              />
-              <KPICard
-                label="Sin resolver"
-                value={stats.sinResolver.toLocaleString('es')}
-                color="text-error"
-              />
-              <KPICard
-                label="Menores"
-                value={stats.menores.toLocaleString('es')}
-                sub={`${stats.verificados.toLocaleString('es')} verificados`}
-              />
-            </div>
-
-            {/* Zonas */}
-            <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-hairline">
-                <h3 className="text-[18px] font-semibold text-ink">Zonas con mayor déficit</h3>
-                <p className="text-sm text-body mt-0.5">Ordenadas por personas sin resolver</p>
-              </div>
-              <div className="divide-y divide-hairline">
-                {stats.zonas.slice(0, 20).map((z) => (
-                  <div key={z.zone} className="px-6 py-4 flex items-center gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-ink truncate">{z.zone}</p>
-                      <p className="text-xs text-body mt-0.5">{z.total.toLocaleString('es')} registradas</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-24 h-1.5 bg-surface-strong rounded-full overflow-hidden">
-                        <div className="h-full bg-success rounded-full" style={{ width: `${z.pct}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-success w-8 text-right">{z.pct}%</span>
-                      <span className="text-xs text-error font-semibold w-20 text-right">-{z.faltantes.toLocaleString('es')}</span>
-                    </div>
+          <div className="divide-y divide-hairline">
+            {zonas.slice(0, 20).map((z) => (
+              <div key={z.zone} className="px-6 py-4 flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-ink truncate">{z.zone}</p>
+                  <p className="text-xs text-body mt-0.5">{z.total.toLocaleString('es')} registradas</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-24 h-1.5 bg-surface-strong rounded-full overflow-hidden">
+                    <div className="h-full bg-success rounded-full" style={{ width: `${z.pct}%` }} />
                   </div>
-                ))}
+                  <span className="text-xs font-semibold text-success w-8 text-right">{z.pct}%</span>
+                  <span className="text-xs text-error font-semibold w-20 text-right">-{z.faltantes.toLocaleString('es')}</span>
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            {/* ── SITIOS ── */}
-            <SectionHeader
-              title="Sitios"
-              sub={`${stats.totalSitios} sitios de acopio y refugio registrados`}
-            />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-              <KPICard label="Total sitios" value={stats.totalSitios.toLocaleString('es')} />
-              <KPICard label="Abiertos" value={stats.sitiosAbiertos.toLocaleString('es')} color="text-success" />
-              <KPICard label="Cerrados" value={stats.sitiosCerrados.toLocaleString('es')} color="text-error" />
-            </div>
+        {/* ── SITIOS ── */}
+        <SectionHeader
+          title="Sitios"
+          sub={`${totalSitios} sitios de acopio y refugio registrados`}
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+          <KPICard label="Total sitios" value={totalSitios.toLocaleString('es')} />
+          <KPICard label="Abiertos" value={sitiosAbiertos.toLocaleString('es')} color="text-success" />
+          <KPICard label="Cerrados" value={sitiosCerrados.toLocaleString('es')} color="text-error" />
+        </div>
 
-            {/* Necesidades */}
-            <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-hairline">
-                <h3 className="text-[18px] font-semibold text-ink">Necesidades más críticas</h3>
-              </div>
-              <div className="px-6 py-4 flex flex-wrap gap-2">
-                {stats.necesidades.map((n) => (
-                  <span key={n.nombre} className="inline-flex items-center gap-1.5 bg-surface-strong rounded-full px-3 py-1 text-xs font-semibold text-ink">
-                    {n.nombre}
-                    <span className="text-muted font-normal">×{n.count}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
+        <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-hairline">
+            <h3 className="text-[18px] font-semibold text-ink">Necesidades más críticas</h3>
+          </div>
+          <div className="px-6 py-4 flex flex-wrap gap-2">
+            {necesidades.map((n) => (
+              <span key={n.nombre} className="inline-flex items-center gap-1.5 bg-surface-strong rounded-full px-3 py-1 text-xs font-semibold text-ink">
+                {n.nombre}
+                <span className="text-muted font-normal">×{n.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
 
-            {/* Sitios list */}
-            <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-hairline">
-                <h3 className="text-[18px] font-semibold text-ink">Sitios activos</h3>
+        <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-hairline">
+            <h3 className="text-[18px] font-semibold text-ink">Sitios activos</h3>
+          </div>
+          <div className="divide-y divide-hairline">
+            {sitios.slice(0, 15).map((s) => (
+              <div key={s.id} className="px-6 py-4 flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-ink truncate">{s.nombre}</p>
+                  <p className="text-xs text-body mt-0.5 capitalize">{s.tipo}</p>
+                </div>
+                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${s.estado_operativo === 'abierto' ? 'bg-green-50 text-success' : 'bg-red-50 text-error'}`}>
+                  {s.estado_operativo}
+                </span>
               </div>
-              <div className="divide-y divide-hairline">
-                {stats.sitiosList.map((s) => (
-                  <div key={s.id} className="px-6 py-4 flex items-center gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-ink truncate">{s.nombre}</p>
-                      <p className="text-xs text-body mt-0.5 capitalize">{s.tipo}</p>
-                    </div>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${s.estado_operativo === 'abierto' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
-                      {s.estado_operativo}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            {/* ── INGRESOS ── */}
-            <SectionHeader
-              title="Ingresos comunitarios"
-              sub={`${stats.totalIngresos.toLocaleString('es')} personas en listas comunitarias`}
-            />
-            <div className="bg-surface-strong border border-hairline-strong rounded-xl px-6 py-4 mb-6">
-              <p className="text-sm text-body">
-                ⚠️ <strong>Importante:</strong> aparecer en una lista comunitaria no confirma que la persona esté a salvo. Verificá siempre en el lugar.
-              </p>
-            </div>
-            <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-hairline">
-                <h3 className="text-[18px] font-semibold text-ink">Por ubicación</h3>
+        {/* ── INGRESOS ── */}
+        <SectionHeader
+          title="Ingresos comunitarios"
+          sub={`${totalIngresos.toLocaleString('es')} personas en listas comunitarias`}
+        />
+        <div className="bg-surface-strong border border-hairline-strong rounded-xl px-6 py-4 mb-6">
+          <p className="text-sm text-body">
+            ⚠️ <strong>Importante:</strong> aparecer en una lista comunitaria no confirma que la persona esté a salvo. Verificá siempre en el lugar.
+          </p>
+        </div>
+        <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-hairline">
+            <h3 className="text-[18px] font-semibold text-ink">Por ubicación</h3>
+          </div>
+          <div className="divide-y divide-hairline">
+            {ingresosPorUbicacion.map((i) => (
+              <div key={i.ubicacion} className="px-6 py-4 flex items-center justify-between">
+                <p className="text-sm font-semibold text-ink truncate flex-1">{i.ubicacion}</p>
+                <span className="text-sm text-body ml-4">{i.count.toLocaleString('es')}</span>
               </div>
-              <div className="divide-y divide-hairline">
-                {stats.ingresosPorUbicacion.map((i) => (
-                  <div key={i.ubicacion} className="px-6 py-4 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-ink truncate flex-1">{i.ubicacion}</p>
-                    <span className="text-sm text-body ml-4">{i.count.toLocaleString('es')}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <p className="text-body text-center py-32">No se pudieron cargar los datos.</p>
-        )}
+            ))}
+          </div>
+        </div>
 
         <p className="mt-12 text-xs text-muted text-center">
-          Datos: <a href="https://venezuelareporta.org" className="text-text-link">venezuelareporta.org</a> · Localizalo {new Date().getFullYear()}
+          Datos: <a href="https://venezuelareporta.org" className="text-text-link">venezuelareporta.org</a> · Actualizado cada 12h · Generado {new Date(generado_at).toLocaleString('es')}
         </p>
       </div>
     </main>
