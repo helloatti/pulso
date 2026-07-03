@@ -1,3 +1,4 @@
+import { AccordionUbicacion } from './AccordionUbicacion'
 export const revalidate = 43200 // 12 horas
 
 const API_BASE = 'https://venezuelareporta.org/api/v1'
@@ -25,6 +26,8 @@ type Ingreso = {
   id: string
   nombre: string
   ubicacion: string | null
+  procedencia: string | null
+  edad: number | null
 }
 
 async function fetchAllPages<T>(endpoint: string, key: string, pageSize = 100): Promise<{ items: T[]; total: number }> {
@@ -81,13 +84,14 @@ function calcNecesidades(sitios: Sitio[]) {
 }
 
 function calcIngresosPorUbicacion(ingresos: Ingreso[]) {
-  const map: Record<string, number> = {}
+  const map: Record<string, Ingreso[]> = {}
   for (const i of ingresos) {
     const u = i.ubicacion ?? 'Sin ubicación'
-    map[u] = (map[u] ?? 0) + 1
+    if (!map[u]) map[u] = []
+    map[u].push(i)
   }
   return Object.entries(map)
-    .map(([ubicacion, count]) => ({ ubicacion, count }))
+    .map(([ubicacion, personas]) => ({ ubicacion, personas, count: personas.length }))
     .sort((a, b) => b.count - a.count)
 }
 
@@ -134,7 +138,7 @@ export default async function PulsoDashboard() {
   const sitiosCerrados = sitios.filter((s) => s.estado_operativo === 'cerrado').length
   const zonas = calcZonas(personas)
   const necesidades = calcNecesidades(sitios)
-  const ingresosPorUbicacion = calcIngresosPorUbicacion(ingresos).slice(0, 15)
+  const ingresosPorUbicacion = calcIngresosPorUbicacion(ingresos).slice(0, 20)
 
   return (
     <main className="min-h-screen bg-canvas px-6 py-12 font-sans">
@@ -247,15 +251,16 @@ export default async function PulsoDashboard() {
           <div className="px-6 py-4 border-b border-hairline">
             <h3 className="text-[18px] font-semibold text-ink">Por ubicación</h3>
           </div>
-          <div className="divide-y divide-hairline">
+          <div>
             {ingresosPorUbicacion.map((i) => (
-              <div key={i.ubicacion} className="px-6 py-4 flex items-center justify-between">
-                <p className="text-sm font-semibold text-ink truncate flex-1">{i.ubicacion}</p>
-                <span className="text-sm text-body ml-4">{i.count.toLocaleString('es')}</span>
-              </div>
+              <AccordionUbicacion
+                key={i.ubicacion}
+                ubicacion={i.ubicacion}
+                count={i.count}
+                personas={i.personas}
+              />
             ))}
-          </div>
-        </div>
+          </div>  
 
         <p className="mt-12 text-xs text-muted text-center">
           Datos: <a href="https://venezuelareporta.org" className="text-text-link">venezuelareporta.org</a> · Actualizado cada 12h · Generado {new Date(generado_at).toLocaleString('es')}
