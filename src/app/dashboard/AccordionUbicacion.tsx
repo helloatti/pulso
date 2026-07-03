@@ -19,6 +19,10 @@ type Props = {
 export function AccordionUbicacion({ ubicacion, count, personas }: Props) {
   const [open, setOpen] = useState(false)
 
+  const sorted = [...personas].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, 'es')
+  )
+
   return (
     <div className="border-b border-hairline last:border-0">
       <button
@@ -43,7 +47,7 @@ export function AccordionUbicacion({ ubicacion, count, personas }: Props) {
             Cerrar ▲
           </button>
           <div className="divide-y divide-hairline">
-            {personas.map((p) => (
+            {sorted.map((p) => (
               <div key={p.id} className="px-6 py-3 flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-ink truncate capitalize">{p.nombre.toLowerCase()}</p>
