@@ -1,5 +1,6 @@
 import { AccordionUbicacion } from './AccordionUbicacion'
-export const revalidate = 43200 // 12 horas
+
+export const revalidate = 43200
 
 const API_BASE = 'https://venezuelareporta.org/api/v1'
 
@@ -144,7 +145,6 @@ export default async function PulsoDashboard() {
     <main className="min-h-screen bg-canvas px-6 py-12 font-sans">
       <div className="max-w-5xl mx-auto">
 
-        {/* Header */}
         <div className="mb-10">
           <span className="text-[11px] font-semibold tracking-[0.88px] uppercase text-muted">
             Localizalo · Dashboard
@@ -157,7 +157,6 @@ export default async function PulsoDashboard() {
           </p>
         </div>
 
-        {/* ── PERSONAS ── */}
         <SectionHeader
           title="Personas"
           sub={`${totalPersonas.toLocaleString('es')} registradas en el sistema`}
@@ -193,7 +192,6 @@ export default async function PulsoDashboard() {
           </div>
         </div>
 
-        {/* ── SITIOS ── */}
         <SectionHeader
           title="Sitios"
           sub={`${totalSitios} sitios de acopio y refugio registrados`}
@@ -237,7 +235,6 @@ export default async function PulsoDashboard() {
           </div>
         </div>
 
-        {/* ── INGRESOS ── */}
         <SectionHeader
           title="Ingresos comunitarios"
           sub={`${totalIngresos.toLocaleString('es')} personas en listas comunitarias`}
@@ -260,7 +257,8 @@ export default async function PulsoDashboard() {
                 personas={i.personas}
               />
             ))}
-          </div>  
+          </div>
+        </div>
 
         <p className="mt-12 text-xs text-muted text-center">
           Datos: <a href="https://venezuelareporta.org" className="text-text-link">venezuelareporta.org</a> · Actualizado cada 12h · Generado {new Date(generado_at).toLocaleString('es')}
