@@ -8,6 +8,9 @@ type Ingreso = {
   ubicacion: string | null
   procedencia: string | null
   edad: number | null
+  cedula: string | null
+  fuente: string | null
+  ficha_url: string | null
 }
 
 type Props = {
@@ -51,13 +54,33 @@ export function AccordionUbicacion({ ubicacion, count, personas }: Props) {
               <div key={p.id} className="px-6 py-3 flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-ink truncate capitalize">{p.nombre.toLowerCase()}</p>
-                  {p.procedencia && (
-                    <p className="text-xs text-body mt-0.5">{p.procedencia}</p>
+                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                    {p.cedula && (
+                      <span className="text-xs text-body font-mono">{p.cedula}</span>
+                    )}
+                    {p.procedencia && (
+                      <span className="text-xs text-body">{p.procedencia}</span>
+                    )}
+                    {p.fuente && (
+                      <span className="text-xs text-muted">vía {p.fuente}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {p.edad && (
+                    <span className="text-xs text-muted">{p.edad} años</span>
+                  )}
+                  {p.ficha_url && (
+                    
+                      href={p.ficha_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-text-link hover:underline"
+                    >
+                      Ver ficha →
+                    </a>
                   )}
                 </div>
-                {p.edad && (
-                  <span className="text-xs text-muted shrink-0">{p.edad} años</span>
-                )}
               </div>
             ))}
           </div>
