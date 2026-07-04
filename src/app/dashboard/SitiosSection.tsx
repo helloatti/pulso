@@ -23,26 +23,33 @@ export function SitiosSection({ sitios }: { sitios: Sitio[] }) {
     : sitios
 
   return (
-    <>
-      <NecesidadesGrid
-        sitios={sitios}
-        necesidadActiva={necesidadFiltro}
-        onNecesidadClick={(n) => setNecesidadFiltro(n === necesidadFiltro ? null : n)}
-      />
-      {necesidadFiltro && (
-        <div className="mb-4 flex items-center gap-3">
-          <span className="text-sm text-body">
-            Mostrando sitios que necesitan <strong className="text-ink capitalize">{necesidadFiltro}</strong>
-          </span>
-          <button
-            onClick={() => setNecesidadFiltro(null)}
-            className="text-xs text-text-link hover:underline"
-          >
-            Ver todos
-          </button>
-        </div>
-      )}
-      <SitiosGrid sitios={sitiosFiltrados} />
-    </>
+    <div className="flex flex-col lg:flex-row gap-4 items-start">
+      {/* Izquierda — Necesidades */}
+      <div className="w-full lg:w-80 shrink-0">
+        <NecesidadesGrid
+          sitios={sitios}
+          necesidadActiva={necesidadFiltro}
+          onNecesidadClick={(n) => setNecesidadFiltro(n === necesidadFiltro ? null : n)}
+        />
+      </div>
+
+      {/* Derecha — Sitios */}
+      <div className="flex-1 min-w-0">
+        {necesidadFiltro && (
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-sm text-body">
+              Filtrando por <strong className="text-ink capitalize">{necesidadFiltro}</strong>
+            </span>
+            <button
+              onClick={() => setNecesidadFiltro(null)}
+              className="text-xs text-text-link hover:underline"
+            >
+              Ver todos
+            </button>
+          </div>
+        )}
+        <SitiosGrid sitios={sitiosFiltrados} />
+      </div>
+    </div>
   )
 }
