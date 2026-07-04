@@ -1,7 +1,6 @@
 import { AccordionUbicacion } from './AccordionUbicacion'
 import { ZonasGrid } from './ZonasGrid'
-import { SitiosGrid } from './SitiosGrid'
-import { NecesidadesGrid } from './NecesidadesGrid'
+import { SitiosSection } from './SitiosSection'
 import type { Ingreso } from './types'
 
 export const revalidate = 43200
@@ -194,8 +193,7 @@ export default async function PulsoDashboard() {
           <KPICard label="Cerrados" value={sitiosCerrados.toLocaleString('es')} color="text-error" />
         </div>
 
-        <NecesidadesGrid sitios={sitios} />
-        <SitiosGrid sitios={sitios} />
+        <SitiosSection sitios={sitios} />
 
         <SectionHeader
           title="Ingresos comunitarios"

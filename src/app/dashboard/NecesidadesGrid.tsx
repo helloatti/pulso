@@ -13,6 +13,12 @@ type Sitio = {
   personas_estimadas: number | null
 }
 
+type Props = {
+  sitios: Sitio[]
+  necesidadActiva: string | null
+  onNecesidadClick: (n: string) => void
+}
+
 const NECESIDAD_EMOJI: Record<string, string> = {
   agua: '💧',
   alimentos: '🍽️',
@@ -33,7 +39,7 @@ function formatFecha(iso: string | null): string {
   return `hace ${diff} días`
 }
 
-export function NecesidadesGrid({ sitios }: { sitios: Sitio[] }) {
+export function NecesidadesGrid({ sitios, necesidadActiva, onNecesidadClick }: Props) {
   const necesidadesStats = useMemo(() => {
     const map: Record<string, {
       totalSitios: number
@@ -65,21 +71,29 @@ export function NecesidadesGrid({ sitios }: { sitios: Sitio[] }) {
     <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden mb-6">
       <div className="px-6 py-4 border-b border-hairline">
         <h3 className="text-[18px] font-semibold text-ink">Necesidades más críticas</h3>
-        <p className="text-sm text-body mt-0.5">Por sitios abiertos que las reportan</p>
+        <p className="text-sm text-body mt-0.5">Click en una necesidad para filtrar los sitios</p>
       </div>
       <div className="divide-y divide-hairline">
         {necesidadesStats.map((n) => {
           const desactualizadosPct = n.totalSitios > 0
             ? Math.round((n.sitiosDesactualizados / n.totalSitios) * 100)
             : 0
+          const activa = necesidadActiva === n.nombre
 
           return (
-            <div key={n.nombre} className="px-6 py-4 flex items-center gap-4">
+            <button
+              key={n.nombre}
+              onClick={() => onNecesidadClick(n.nombre)}
+              className={`w-full px-6 py-4 flex items-center gap-4 text-left transition-colors ${activa ? 'bg-surface-strong' : 'hover:bg-surface-strong'}`}
+            >
               <span className="text-2xl w-8 shrink-0">
                 {NECESIDAD_EMOJI[n.nombre] ?? '📦'}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-ink capitalize">{n.nombre}</p>
+                <p className={`text-sm font-semibold capitalize ${activa ? 'text-ink' : 'text-ink'}`}>
+                  {n.nombre}
+                  {activa && <span className="ml-2 text-xs text-text-link">● activo</span>}
+                </p>
                 <p className="text-xs text-body mt-0.5">
                   {n.sitiosAbiertos} sitios abiertos · último reporte {formatFecha(n.ultimoReporte)}
                 </p>
@@ -94,7 +108,7 @@ export function NecesidadesGrid({ sitios }: { sitios: Sitio[] }) {
                   {n.totalSitios}
                 </span>
               </div>
-            </div>
+            </button>
           )
         })}
       </div>
