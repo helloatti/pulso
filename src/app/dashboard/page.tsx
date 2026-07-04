@@ -1,6 +1,7 @@
 import { AccordionUbicacion } from './AccordionUbicacion'
 import { ZonasGrid } from './ZonasGrid'
 import { SitiosGrid } from './SitiosGrid'
+import { NecesidadesGrid } from './NecesidadesGrid'
 import type { Ingreso } from './types'
 
 export const revalidate = 43200
@@ -24,6 +25,8 @@ type Sitio = {
   estado_operativo: string
   necesidades: string[]
   frescura: string
+  ultimo_reporte_at: string | null
+  personas_estimadas: number | null
 }
 
 async function fetchAllPages<T>(endpoint: string, key: string, pageSize = 100): Promise<{ items: T[]; total: number }> {
@@ -50,9 +53,7 @@ async function fetchAllPages<T>(endpoint: string, key: string, pageSize = 100): 
 
 function normalizeZoneName(name: string): string {
   if (!name || name === 'Sin ubicación' || name.trim().toLowerCase() === 'no indicada') return 'Sin ubicación'
-  
   let n = name.trim().toLowerCase()
-  
   if (n === 'la guaira' || n === 'guaira' || n === 'en la guaira' || n === 'vargas' || n === 'la guaria' || n === 'la guairá') return 'La Guaira'
   if (n === 'tanaguarenas' || n === 'tanaguarena') return 'Tanaguarena'
   if (n === 'maiquetia' || n === 'maiquetía') return 'Maiquetía'
@@ -63,8 +64,7 @@ function normalizeZoneName(name: string): string {
   if (n === 'los cocos' || n === 'playa los cocos') return 'Playa Los Cocos'
   if (n === 'playa grande' || n === 'playa grande la guaira' || n === 'la guaira playa grande') return 'Playa Grande'
   if (n === 'los corales' || n === 'los corales la guaira' || n === 'la guaira los corales') return 'Los Corales'
-  
-  return n.split(/\s+/).map(word => 
+  return n.split(/\s+/).map(word =>
     word ? word.charAt(0).toUpperCase() + word.slice(1) : ''
   ).join(' ')
 }
@@ -78,51 +78,31 @@ function getEstadoPorZona(zona: string): string {
 }
 
 function calcZonas(personas: Persona[]) {
-  const zones: Record<string, { total: number; resueltos: number }> = {}
+  const zones: Record<string, { total: number; resueltos: number; estado: string }> = {}
   for (const p of personas) {
-    const rawZone = p.ciudad ?? p.zona ?? 'Sin ubicación'
-    const z = normalizeZoneName(rawZone)
-    if (!zones[z]) zones[z] = { total: 0, resueltos: 0 }
+    const rawZona = p.zona ?? p.ciudad ?? 'Sin ubicación'
+    const z = normalizeZoneName(rawZona)
+    const estado = getEstadoPorZona(z)
+    if (!zones[z]) zones[z] = { total: 0, resueltos: 0, estado }
     zones[z].total++
     if (p.status === 'encontrado' || p.status === 'a_salvo') zones[z].resueltos++
   }
   return Object.entries(zones)
     .map(([zone, s]) => ({
       zone,
-      estado: getEstadoPorZona(zone),
       total: s.total,
       resueltos: s.resueltos,
       faltantes: s.total - s.resueltos,
       pct: Math.round((s.resueltos / s.total) * 100),
+      estado: s.estado,
     }))
     .sort((a, b) => b.faltantes - a.faltantes)
-}
-
-function normalizeNecesidad(name: string): string {
-  if (!name) return ''
-  let n = name.trim().toLowerCase()
-  return n.charAt(0).toUpperCase() + n.slice(1)
-}
-
-function calcNecesidades(sitios: Sitio[]) {
-  const map: Record<string, number> = {}
-  for (const s of sitios) {
-    for (const rawN of s.necesidades ?? []) {
-      const n = normalizeNecesidad(rawN)
-      if (!n) continue
-      map[n] = (map[n] ?? 0) + 1
-    }
-  }
-  return Object.entries(map)
-    .map(([nombre, count]) => ({ nombre, count }))
-    .sort((a, b) => b.count - a.count)
 }
 
 function calcIngresosPorUbicacion(ingresos: Ingreso[]) {
   const map: Record<string, Ingreso[]> = {}
   for (const i of ingresos) {
-    const rawU = i.ubicacion ?? 'Sin ubicación'
-    const u = normalizeZoneName(rawU)
+    const u = i.ubicacion ?? 'Sin ubicación'
     if (!map[u]) map[u] = []
     map[u].push(i)
   }
@@ -173,31 +153,28 @@ export default async function PulsoDashboard() {
   const sitiosAbiertos = sitios.filter((s) => s.estado_operativo === 'abierto').length
   const sitiosCerrados = sitios.filter((s) => s.estado_operativo === 'cerrado').length
   const zonas = calcZonas(personas)
-  const necesidades = calcNecesidades(sitios)
   const ingresosPorUbicacion = calcIngresosPorUbicacion(ingresos).slice(0, 20)
 
   return (
     <main className="min-h-screen bg-canvas px-6 py-12 font-sans">
       <div className="max-w-5xl mx-auto">
 
-        <header className="mb-12 bg-surface-card border border-hairline-strong rounded-2xl p-8 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2 py-1 bg-surface-strong rounded-md text-[11px] font-bold tracking-widest uppercase text-muted">
-              Localizalo
-            </span>
-            <span className="text-muted text-sm">•</span>
-            <span className="text-[11px] font-bold tracking-widest uppercase text-muted">Dashboard</span>
-          </div>
-          <h1 className="text-[40px] md:text-[48px] font-bold leading-tight tracking-tight text-ink mb-3">
+        <div className="mb-10">
+          <span className="text-[11px] font-semibold tracking-[0.88px] uppercase text-muted">
+            Localizalo · Dashboard
+          </span>
+          <h1 className="mt-2 text-[36px] font-semibold leading-[1.15] tracking-[-1.08px] text-ink">
             Pulso
           </h1>
-          <p className="text-body text-lg max-w-2xl leading-relaxed">
+          <p className="mt-2 text-body text-base">
             Vista en tiempo real del estado de la búsqueda: zonas críticas, sitios de acopio y personas registradas.
           </p>
-        </header>
+        </div>
 
-
+        <SectionHeader
+          title="Personas"
+          sub={`${totalPersonas.toLocaleString('es')} registradas en el sistema`}
+        />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <KPICard label="Total" value={totalPersonas.toLocaleString('es')} />
           <KPICard label="Resueltos" value={`${pctResueltos}%`} sub={`${resueltos.toLocaleString('es')} personas`} color="text-success" />
@@ -217,20 +194,7 @@ export default async function PulsoDashboard() {
           <KPICard label="Cerrados" value={sitiosCerrados.toLocaleString('es')} color="text-error" />
         </div>
 
-        <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden mb-6">
-          <div className="px-6 py-4 border-b border-hairline">
-            <h3 className="text-[18px] font-semibold text-ink">Necesidades más críticas</h3>
-          </div>
-          <div className="px-6 py-4 flex flex-wrap gap-2">
-            {necesidades.map((n) => (
-              <span key={n.nombre} className="inline-flex items-center gap-1.5 bg-surface-strong rounded-full px-3 py-1 text-xs font-semibold text-ink">
-                {n.nombre}
-                <span className="text-muted font-normal">×{n.count}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
+        <NecesidadesGrid sitios={sitios} />
         <SitiosGrid sitios={sitios} />
 
         <SectionHeader
