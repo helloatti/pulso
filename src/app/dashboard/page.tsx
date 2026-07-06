@@ -151,11 +151,11 @@ export default async function PulsoDashboard() {
   const menores = personas.filter((p) => p.menor).length
   const verificados = personas.filter((p) => p.verificado).length
   const pctResueltos = totalPersonas > 0 ? Math.round((resueltos / totalPersonas) * 100) : 0
-  const sitiosAbiertos = sitios.filter((s) => s.estado_operativo === 'abierto').length
-  const sitiosCerrados = sitios.filter((s) => s.estado_operativo === 'cerrado').length
   const sitiosUnicos = sitios.filter((s, i, arr) =>
     arr.findIndex((x) => x.nombre === s.nombre && x.lat === s.lat && x.lng === s.lng) === i
   )
+  const sitiosAbiertos = sitiosUnicos.filter((s) => s.estado_operativo === 'abierto').length
+  const sitiosDesconocidos = sitiosUnicos.filter((s) => s.estado_operativo === 'desconocido').length
   const zonas = calcZonas(personas)
   const ingresosPorUbicacion = calcIngresosPorUbicacion(ingresos).slice(0, 20)
 

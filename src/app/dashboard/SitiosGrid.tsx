@@ -71,7 +71,7 @@ export function SitiosGrid({ sitios }: { sitios: Sitio[] }) {
               <p className="text-sm font-semibold text-ink leading-tight max-w-[200px]">{s.nombre}</p>
               <p className="text-xs text-body mt-1 capitalize">{s.tipo}</p>
             </div>
-            <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${s.estado_operativo === 'abierto' ? 'bg-green-50 text-success' : 'bg-red-50 text-error'}`}>
+            <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${s.estado_operativo === 'abierto' ? 'bg-green-50 text-success' : 'bg-surface-strong text-muted'}`}>
               {s.estado_operativo}
             </span>
           </div>
