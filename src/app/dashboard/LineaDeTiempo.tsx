@@ -47,47 +47,44 @@ export function LineaDeTiempo({ personas }: Props) {
       </div>
 
       <div className="px-6 py-6">
-        <div className="flex items-end gap-2 h-40">
-          {datos.map((d) => (
-            <div key={d.fecha} className="flex-1 flex flex-col items-center gap-1 group">
-              {/* Tooltip */}
-              <div className="hidden group-hover:flex flex-col items-center mb-1">
-                <div className="bg-ink text-on-primary text-xs rounded px-2 py-1 whitespace-nowrap">
-                  <p className="font-semibold">{d.label}</p>
-                  <p>{d.total} registradas</p>
-                  <p className="text-success">{d.resueltos} resueltas</p>
+        <div className="flex items-end gap-2" style={{ height: '160px' }}>
+          {datos.map((d) => {
+            const barHeight = Math.max((d.total / maxTotal) * 140, 4)
+            const resueltosHeight = d.total > 0 ? (d.resueltos / d.total) * barHeight : 0
+            const sinResolverHeight = barHeight - resueltosHeight
+
+            return (
+              <div key={d.fecha} className="flex-1 flex flex-col items-center gap-1 group relative">
+                {/* Tooltip */}
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10">
+                  <div className="bg-ink text-on-primary text-xs rounded px-2 py-1 whitespace-nowrap text-center">
+                    <p className="font-semibold">{d.label}</p>
+                    <p>{d.total} registradas</p>
+                    <p style={{ color: '#16a34a' }}>{d.resueltos} resueltas</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Bar */}
-              <div
-                className="w-full rounded-t-sm flex flex-col justify-end overflow-hidden"
-                style={{ height: `${Math.max((d.total / maxTotal) * 100, 4)}%` }}
-              >
-                <div
-                  className="w-full bg-success rounded-t-sm"
-                  style={{ height: `${d.total > 0 ? (d.resueltos / d.total) * 100 : 0}%` }}
-                />
-                <div
-                  className="w-full bg-error"
-                  style={{ height: `${d.total > 0 ? (d.sinResolver / d.total) * 100 : 0}%` }}
-                />
-              </div>
+                {/* Bar */}
+                <div className="w-full flex flex-col justify-end" style={{ height: `${barHeight}px` }}>
+                  <div style={{ height: `${resueltosHeight}px`, backgroundColor: '#16a34a', borderRadius: resueltosHeight > 0 && sinResolverHeight === 0 ? '2px 2px 0 0' : '0' }} />
+                  <div style={{ height: `${sinResolverHeight}px`, backgroundColor: '#eb8e90', borderRadius: sinResolverHeight > 0 ? '2px 2px 0 0' : '0' }} />
+                </div>
 
-              {/* Label */}
-              <p className="text-[10px] text-muted text-center leading-tight">{d.label}</p>
-            </div>
-          ))}
+                {/* Label */}
+                <p className="text-[10px] text-muted text-center leading-tight mt-1">{d.label}</p>
+              </div>
+            )
+          })}
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-6 mt-4">
+        <div className="flex items-center gap-6 mt-2">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm bg-success" />
+            <div style={{ backgroundColor: '#16a34a' }} className="w-3 h-3 rounded-sm" />
             <span className="text-xs text-body">Resueltas</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm bg-error" />
+            <div style={{ backgroundColor: '#eb8e90' }} className="w-3 h-3 rounded-sm" />
             <span className="text-xs text-body">Sin resolver</span>
           </div>
         </div>
