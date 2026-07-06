@@ -195,7 +195,7 @@ export default async function PulsoDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <KPICard label="Total sitios" value={totalSitios.toLocaleString('es')} />
           <KPICard label="Abiertos" value={sitiosAbiertos.toLocaleString('es')} color="text-success" />
-          <KPICard label="Estado desconocido" value={sitiosCerrados.toLocaleString('es')} color="text-muted" />
+          <KPICard label="Estado desconocido" value={sitiosDesconocidos.toLocaleString('es')} color="text-muted" />
         </div>
 
         <SitiosSection sitios={sitiosUnicos} />
