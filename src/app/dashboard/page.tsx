@@ -26,6 +26,8 @@ type Sitio = {
   frescura: string
   ultimo_reporte_at: string | null
   personas_estimadas: number | null
+  lat: number | null
+  lng: number | null
 }
 
 async function fetchAllPages<T>(endpoint: string, key: string, pageSize = 100): Promise<{ items: T[]; total: number }> {
@@ -151,6 +153,9 @@ export default async function PulsoDashboard() {
   const pctResueltos = totalPersonas > 0 ? Math.round((resueltos / totalPersonas) * 100) : 0
   const sitiosAbiertos = sitios.filter((s) => s.estado_operativo === 'abierto').length
   const sitiosCerrados = sitios.filter((s) => s.estado_operativo === 'cerrado').length
+  const sitiosUnicos = sitios.filter((s, i, arr) =>
+    arr.findIndex((x) => x.nombre === s.nombre && x.lat === s.lat && x.lng === s.lng) === i
+  )
   const zonas = calcZonas(personas)
   const ingresosPorUbicacion = calcIngresosPorUbicacion(ingresos).slice(0, 20)
 
@@ -190,10 +195,10 @@ export default async function PulsoDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <KPICard label="Total sitios" value={totalSitios.toLocaleString('es')} />
           <KPICard label="Abiertos" value={sitiosAbiertos.toLocaleString('es')} color="text-success" />
-          <KPICard label="Cerrados" value={sitiosCerrados.toLocaleString('es')} color="text-error" />
+          <KPICard label="Estado desconocido" value={sitiosCerrados.toLocaleString('es')} color="text-muted" />
         </div>
 
-        <SitiosSection sitios={sitios} />
+        <SitiosSection sitios={sitiosUnicos} />
 
         <SectionHeader
           title="Ingresos comunitarios"
