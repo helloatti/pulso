@@ -1,4 +1,5 @@
 import { AccordionUbicacion } from './AccordionUbicacion'
+import { BuscadorPersonas } from './BuscadorPersonas'
 import { ZonasGrid } from './ZonasGrid'
 import { SitiosSection } from './SitiosSection'
 import type { Ingreso } from './types'
@@ -174,6 +175,12 @@ export default async function PulsoDashboard() {
             Vista en tiempo real del estado de la búsqueda: zonas críticas, sitios de acopio y personas registradas.
           </p>
         </div>
+
+        <SectionHeader
+          title="Buscador de personas"
+          sub="Buscá a un familiar por nombre"
+        />
+        <BuscadorPersonas />
 
         <SectionHeader
           title="Personas"
