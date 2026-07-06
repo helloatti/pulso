@@ -73,7 +73,7 @@ export function NecesidadesGrid({ sitios, necesidadActiva, onNecesidadClick }: P
         <h3 className="text-[18px] font-semibold text-ink">Necesidades más críticas</h3>
         <p className="text-sm text-body mt-0.5">Click en una necesidad para filtrar los sitios</p>
       </div>
-      <div className="divide-y divide-hairline">
+      <div className="divide-y divide-hairline max-h-[480px] overflow-y-auto">
         {necesidadesStats.map((n) => {
           const desactualizadosPct = n.totalSitios > 0
             ? Math.round((n.sitiosDesactualizados / n.totalSitios) * 100)
