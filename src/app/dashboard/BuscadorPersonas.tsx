@@ -67,7 +67,6 @@ export function BuscadorPersonas() {
 
   return (
     <div className="bg-surface-card border border-hairline-strong rounded-xl overflow-hidden">
-      {/* Search input */}
       <div className="px-6 py-4 border-b border-hairline">
         <div className="flex gap-3">
           <input
@@ -95,64 +94,33 @@ export function BuscadorPersonas() {
         )}
       </div>
 
-      {/* Results */}
       {results.length > 0 && (
         <div className="divide-y divide-hairline">
           {results.map((p) => (
             <div key={p.id} className="px-6 py-4 flex gap-4">
-              {/* Foto */}
               {p.foto_url ? (
-                <img
-                  src={p.foto_url}
-                  alt={p.nombre}
-                  className="w-12 h-12 rounded-lg object-cover shrink-0 bg-surface-strong"
-                />
+                <img src={p.foto_url} alt={p.nombre} className="w-12 h-12 rounded-lg object-cover shrink-0 bg-surface-strong" />
               ) : (
                 <div className="w-12 h-12 rounded-lg bg-surface-strong shrink-0 flex items-center justify-center text-muted text-lg">
                   {p.menor ? '👶' : '👤'}
                 </div>
               )}
-
-              {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-ink capitalize">
-                    {p.nombre.toLowerCase()}
-                  </p>
+                  <p className="text-sm font-semibold text-ink capitalize">{p.nombre.toLowerCase()}</p>
                   <StatusBadge status={p.status} />
                 </div>
-
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
-                  {(p.ciudad || p.zona) && (
-                    <p className="text-xs text-body">{p.ciudad ?? p.zona}</p>
-                  )}
-                  {p.edad && (
-                    <p className="text-xs text-body">{p.edad} años</p>
-                  )}
-                  {p.cedula && (
-                    <p className="text-xs text-body font-mono">{p.cedula}</p>
-                  )}
+                  {(p.ciudad || p.zona) && <p className="text-xs text-body">{p.ciudad ?? p.zona}</p>}
+                  {p.edad && <p className="text-xs text-body">{p.edad} años</p>}
+                  {p.cedula && <p className="text-xs text-body font-mono">{p.cedula}</p>}
                 </div>
-
-                {p.descripcion && (
-                  <p className="text-xs text-body mt-1 italic">{p.descripcion}</p>
-                )}
-                {p.ultima_vez && (
-                  <p className="text-xs text-muted mt-0.5">Última vez: {p.ultima_vez}</p>
-                )}
-                {p.verificado && p.verificado_por && (
-                  <p className="text-xs text-success mt-0.5">✓ Verificado</p>
-                )}
+                {p.descripcion && <p className="text-xs text-body mt-1 italic">{p.descripcion}</p>}
+                {p.ultima_vez && <p className="text-xs text-muted mt-0.5">Última vez: {p.ultima_vez}</p>}
+                {p.verificado && <p className="text-xs text-success mt-0.5">✓ Verificado</p>}
               </div>
-
-              {/* Link */}
               {p.ficha_url && (
-                
-                  href={p.ficha_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-text-link hover:underline shrink-0 self-start mt-1"
-                >
+                <a href={p.ficha_url} target="_blank" rel="noopener noreferrer" className="text-xs text-text-link hover:underline shrink-0 self-start mt-1">
                   Ver ficha →
                 </a>
               )}
