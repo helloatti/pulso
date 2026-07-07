@@ -1,6 +1,5 @@
 import { AccordionUbicacion } from './AccordionUbicacion'
 import { BuscadorPersonas } from './BuscadorPersonas'
-import { LineaDeTiempo } from './LineaDeTiempo'
 import { ZonasGrid } from './ZonasGrid'
 import { SitiosSection } from './SitiosSection'
 import type { Ingreso } from './types'
@@ -195,7 +194,6 @@ export default async function PulsoDashboard() {
           <KPICard label="Menores" value={menores.toLocaleString('es')} sub={`${verificados.toLocaleString('es')} verificados`} />
         </div>
 
-        <LineaDeTiempo personas={personas} />
         <ZonasGrid zonas={zonas} />
 
         <SectionHeader
