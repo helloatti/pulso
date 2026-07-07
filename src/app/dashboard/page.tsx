@@ -149,11 +149,11 @@ export default async function PulsoDashboard() {
     fetchAllPages<Ingreso>('ingresos', 'personas'),
   ])
 
-  const resueltos = personas.filter((p) => p.status === 'encontrado' || p.status === 'a_salvo').length
-  const sinResolver = totalPersonas - resueltos
+  const encontrados = personas.filter((p) => p.status === 'encontrado').length
+  const aSalvo = personas.filter((p) => p.status === 'a_salvo').length
+  const buscando = personas.filter((p) => p.status === 'buscando').length
   const menores = personas.filter((p) => p.menor).length
-  const verificados = personas.filter((p) => p.verificado).length
-  const pctResueltos = totalPersonas > 0 ? Math.round((resueltos / totalPersonas) * 100) : 0
+  const verificados = personas.filter((p) => p.verificado).length 
 
   const sitiosUnicos = sitios.filter((s, i, arr) =>
     arr.findIndex((x) => x.nombre === s.nombre && x.lat === s.lat && x.lng === s.lng) === i
@@ -187,13 +187,13 @@ export default async function PulsoDashboard() {
 
         <SectionHeader
           title="Personas"
-          sub={`${totalPersonas.toLocaleString('es')} registradas en el sistema`}
+          sub={`${totalPersonas.toLocaleString('es')} personas reportadas en el sistema`}
         />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <KPICard label="Total" value={totalPersonas.toLocaleString('es')} />
-          <KPICard label="Sin resolver" value={sinResolver.toLocaleString('es')} color="text-error" />
-          <KPICard label="Resueltos" value={`${pctResueltos}%`} sub={`${resueltos.toLocaleString('es')} personas`} color="text-success" />
-          <KPICard label="Menores" value={menores.toLocaleString('es')} sub={`${verificados.toLocaleString('es')} identificados`} />
+          <KPICard label="Buscando" value={buscando.toLocaleString('es')} color="text-error" />
+          <KPICard label="Encontrado" value={encontrados.toLocaleString('es')} color="text-success" />
+          <KPICard label="A salvo" value={aSalvo.toLocaleString('es')} color="text-success" />
+          <KPICard label="Menores" value={menores.toLocaleString('es')} sub={`${verificados.toLocaleString('es')} verificados en total`} />
         </div>
 
         <ZonasGrid zonas={zonas} />
