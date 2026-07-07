@@ -154,10 +154,6 @@ export default async function PulsoDashboard() {
   const menores = personas.filter((p) => p.menor).length
   const verificados = personas.filter((p) => p.verificado).length
   const pctResueltos = totalPersonas > 0 ? Math.round((resueltos / totalPersonas) * 100) : 0
-  
-  const fechas = new Set(personas.map((p) => p.created_at.slice(0, 10)))
-  const diasActivos = Math.max(fechas.size, 1)
-  const promedioDiario = Math.round(resueltos / diasActivos)
 
   const sitiosUnicos = sitios.filter((s, i, arr) =>
     arr.findIndex((x) => x.nombre === s.nombre && x.lat === s.lat && x.lng === s.lng) === i
@@ -193,12 +189,11 @@ export default async function PulsoDashboard() {
           title="Personas"
           sub={`${totalPersonas.toLocaleString('es')} registradas en el sistema`}
         />
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <KPICard label="Total" value={totalPersonas.toLocaleString('es')} />
           <KPICard label="Sin resolver" value={sinResolver.toLocaleString('es')} color="text-error" />
           <KPICard label="Resueltos" value={`${pctResueltos}%`} sub={`${resueltos.toLocaleString('es')} personas`} color="text-success" />
           <KPICard label="Menores" value={menores.toLocaleString('es')} sub={`${verificados.toLocaleString('es')} identificados`} />
-          <KPICard label="Promedio diario" value={`+${promedioDiario.toLocaleString('es')}`} sub="resueltos / día" color="text-success" />
         </div>
 
         <ZonasGrid zonas={zonas} />
